@@ -18,3 +18,7 @@ pymupdf
 rank_bm25
 
 pymupdf
+
+openai
+ragas
+python-dotenv

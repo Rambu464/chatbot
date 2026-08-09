@@ -214,6 +214,13 @@ Semua opsional — kalau tidak di-set, backend pakai nilai default yang sudah te
 - `DELETE /api/documents/{filename}` — hapus 1 dokumen beserta seluruh chunk dan cache-nya (**hanya
   Admin/Superadmin**).
 - Upload ulang file dengan nama yang sama akan otomatis menggantikan (bukan menumpuk duplikat) chunk lama.
+- Segala ID Dokumen yang diupload dapat dilihat melalui perintah berikut di terminal :
+  ```bash
+  python -c "from database import get_all_clients; import json; print(json.dumps(get_all_clients(), indent=2))"
+  ```
+  ```bash
+  python -c "from database import get_documents_by_client; import json; print(json.dumps(get_documents_by_client(GANTI_DENGAN_ID_DANAMON), indent=2)"
+  ```
 
 ## 👤 Manajemen User (Superadmin)
 

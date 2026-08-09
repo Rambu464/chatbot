@@ -1,0 +1,86 @@
+[
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Apa itu Rekening Pasif atau Dormant menurut Bank Danamon?",
+    "reference": "Rekening Pasif/Dormant adalah simpanan nasabah dalam bentuk Giro atau Tabungan yang tidak memiliki aktivitas transaksi (selain biaya administrasi dan bunga simpanan) selama periode tertentu yang ditetapkan Bank."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Bolehkah nasabah menarik dana melebihi saldo yang tersedia di rekening?",
+    "reference": "Tidak boleh. Nasabah tidak diperkenankan melakukan penarikan dana yang menyebabkan saldo rekening menjadi debet (overdraft/cerukan), kecuali sudah memiliki fasilitas kredit yang disetujui Bank secara tertulis dengan dokumentasi kredit lengkap."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Berapa lama batas waktu bagi nasabah untuk melaporkan penyelesaian penarikan cek atau bilyet giro kosong?",
+    "reference": "Nasabah wajib melaporkan pemenuhan kewajiban penyelesaian penarikan Cek dan/atau Bilyet Giro kosong dalam jangka waktu 7 hari kerja setelah tanggal penolakan."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Kalau ada selisih saldo antara buku tabungan nasabah dengan catatan bank, mana yang dianggap sah?",
+    "reference": "Saldo/mutasi yang tercatat pada pembukuan Bank merupakan bukti yang sah dan mengikat nasabah, kecuali nasabah dapat membuktikan sebaliknya."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Bagaimana cara perhitungan bunga tabungan dan giro?",
+    "reference": "Bunga dihitung berdasarkan saldo harian dalam satu bulan (dengan saldo minimal tertentu untuk memperoleh bunga), dan jumlah hari bunga dihitung dari hari sesungguhnya dalam sebulan dibagi hari sesungguhnya dalam setahun. Bunga dikenakan Pajak Penghasilan sesuai peraturan yang berlaku."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Dalam kondisi apa simpanan nasabah dikecualikan dari penjaminan LPS?",
+    "reference": "Simpanan dikecualikan dari penjaminan LPS jika: datanya tidak tercatat di Bank, nasabah termasuk kategori yang diuntungkan secara tidak wajar (bunga simpanan melebihi tingkat wajar yang ditetapkan LPS), atau menyebabkan kondisi Bank menjadi tidak sehat."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Kapan Bank berhak memblokir atau menutup rekening nasabah secara sepihak?",
+    "reference": "Bank berhak memblokir/menutup rekening jika ada dugaan penipuan atau kejahatan perbankan terkait rekening, nasabah memberikan data yang tidak benar/diragukan, atau ada permintaan resmi dari Kepolisian, Kejaksaan, Pengadilan, PPATK, KPK, atau kantor pajak sesuai peraturan yang berlaku."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Apa perbedaan rekening gabungan status OR dan AND?",
+    "reference": "Pada rekening gabungan status OR, instruksi atau penarikan dana dapat dilakukan oleh salah satu pembentuk rekening. Pada status AND, seluruh instruksi atau penarikan harus dilakukan bersama-sama oleh semua pembentuk rekening."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Apa yang harus dilakukan nasabah jika kartu debitnya hilang atau dicuri?",
+    "reference": "Nasabah wajib segera memberitahukan melalui telepon atau faksimili kepada Bank (kantor cabang terdekat atau Hello Danamon) agar kartu segera diblokir. Nasabah bertanggung jawab atas kerugian akibat keterlambatan melapor, kecuali dapat dibuktikan sebaliknya."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Berapa maksimal setoran tunai yang bisa dilakukan lewat mesin CDM?",
+    "reference": "Jumlah maksimal setoran tunai melalui CDM ditentukan oleh Bank dan tercantum dalam informasi yang ditampilkan pada terminal CDM saat transaksi, bukan angka tetap yang disebutkan dalam Syarat dan Ketentuan Umum."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Berapa lama Bank menyelesaikan pengaduan tertulis dari nasabah?",
+    "reference": "Pengaduan tertulis diselesaikan dan pemberitahuannya disampaikan secara tertulis paling lama 20 hari kerja sejak dokumen pengaduan diterima secara lengkap oleh Bank, dan dapat diperpanjang hingga 20 hari kerja berikutnya dalam kondisi tertentu."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Apakah nasabah bisa membatalkan pengaduan yang tidak terkait kerugian materiil?",
+    "reference": "Bank dapat menolak menangani pengaduan yang tidak terkait dengan kerugian dan/atau potensi kerugian materiil, wajar, dan secara langsung sebagaimana tercantum dalam perjanjian atau dokumen transaksi keuangan."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Ke pengadilan mana sengketa nasabah dan Bank Danamon diselesaikan jika penyelesaian sengketa lewat OJK tidak berhasil?",
+    "reference": "Sengketa diselesaikan melalui Lembaga Alternatif Penyelesaian Sengketa yang ditetapkan oleh Otoritas Jasa Keuangan, atau melalui Pengadilan Negeri di tempat kantor cabang Pemelihara Rekening Nasabah."
+  },
+  {
+    "client_id": 6,
+    "document": "syartum rek perbankan.pdf",
+    "question": "Apakah Bank bertanggung jawab jika layanan terganggu karena bencana alam?",
+    "reference": "Tidak. Bank dibebaskan dari tanggung jawab atas tuntutan atau kerugian akibat Force Majeure, termasuk bencana alam, huru-hara, epidemi, kebakaran, dan gangguan teknologi baru, selama Bank telah melakukan langkah perbaikan yang wajar."
+  }
+]
