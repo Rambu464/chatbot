@@ -111,6 +111,13 @@ class SavePartialRequest(BaseModel):
     session_id: str
     content: str
 
+class WidgetChatRequest(BaseModel):
+    message: str
+    session_id: str
+    document: Optional[str] = None
+    general_mode: bool = False
+
+
 class CreateSessionRequest(BaseModel):
     title: str
     client_id: int
@@ -340,6 +347,88 @@ async def save_partial_endpoint(request: SavePartialRequest, user=Depends(get_cu
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Gagal menyimpan pesan: {str(e)}")
     return {"status": "empty"}
+
+
+@app.post("/api/widget/chat")
+async def widget_chat_endpoint(
+    request: WidgetChatRequest,
+    x_api_key: str = Header(..., alias="X-API-KEY")
+):
+    # 1. Validasi API Key
+    client = database.get_client_by_api_key(x_api_key)
+    if not client:
+        raise HTTPException(status_code=401, detail="API Key Widget tidak valid atau tidak ditemukan.")
+
+    client_id = client["id"]
+    client_name = client["name"]
+    user_input = request.message.strip()
+
+    if not user_input:
+        raise HTTPException(status_code=400, detail="Pesan tidak boleh kosong.")
+
+    # Ambil riwayat chat lokal widget jika ada
+    # (Karena widget.js/livechat.tsx di-render secara stateless/tanpa login user,
+    #  kita bypass saving message di DB jika session_id tidak terdaftar di chat_sessions,
+    #  namun kita tetap proses RAG-nya agar responsenya keluar!)
+    try:
+        history = get_recent_history(request.session_id)
+    except:
+        history = []
+
+    # Cek & simpan message jika session_id valid di db kita (opsional)
+    try:
+        database.save_message(request.session_id, "user", request.message)
+    except:
+        pass
+
+    # 2. Proses RAG/LLM
+    user_input_lower = user_input.lower()
+    query_embedding = rag.state.embeddings.embed_query(user_input_lower)
+
+    # Cek Cache
+    cache_key = rag.make_cache_key(client_id, request.document, request.general_mode)
+    best_match = None
+    if not history:
+        try:
+            best_match, _ = await rag.check_cache(cache_key, user_input_lower, query_embedding)
+        except:
+            pass
+
+    if best_match:
+        # Simpan assistant message jika session_id valid
+        try:
+            database.save_message(request.session_id, "assistant", best_match["response"])
+        except:
+            pass
+        return {"response": best_match["response"], "source": "cache"}
+
+    # Jalankan Retrieval
+    context, is_rag_mode = rag.get_context(client_id, user_input_lower, query_embedding, request.document)
+    system_prompt = rag.select_system_prompt(is_rag_mode, request.general_mode, client_name=client_name)
+    prompt = rag.build_prompt(system_prompt, user_input, context, history=history)
+
+    # Generate response
+    stop_event = threading.Event()
+    full_response = ""
+    try:
+        async for chunk in rag.stream_llm(prompt, stop_event):
+            full_response += chunk
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal generate LLM: {str(e)}")
+
+    # Simpan assistant message ke DB jika session_id valid
+    if full_response.strip():
+        try:
+            database.save_message(request.session_id, "assistant", full_response)
+        except:
+            pass
+        try:
+            await rag.store_cache(cache_key, user_input_lower, query_embedding, full_response)
+        except:
+            pass
+
+    return {"response": full_response, "source": "llm"}
+
 
 
 # =========================================================
