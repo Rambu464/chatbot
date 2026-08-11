@@ -89,62 +89,20 @@ SYSTEM_PROMPT_CHAT = """Kamu adalah asisten AI{client_info} yang santai dan rama
 [ATURAN]
 1. Jawab dengan jelas, ramah, dan detail tanpa bertele-tele."""
 
-# Few-shot examples untuk SYSTEM_PROMPT_RAG_STRICT.
-# Diinjeksi sebagai pasangan user/assistant turn di build_prompt() agar model
-# melihat contoh konkret gaya jawaban yang benar, tanpa aturan abstrak tambahan.
-# 3 contoh dipilih untuk menutup 3 pola error utama dari evaluasi RAGAS:
-#   - Contoh 1: verbatim prosedur (fix faithfulness=0.000 soal nasabah meninggal)
-#   - Contoh 2: verbatim rumus/angka (fix faithfulness=0.333 soal bunga)
-#   - Contoh 3: stop di inti jawaban, jangan tambah kondisi (fix faithfulness=0.600)
+# Few-shot example untuk SYSTEM_PROMPT_RAG_STRICT.
+# Diinjeksi sebagai 1 pasangan user/assistant turn ringkas di build_prompt().
+# 1 contoh ringkas terbukti paling optimal untuk model 2B: memberikan contoh
+# gaya jawaban langsung & verbatim tanpa membebani context window model.
 FEW_SHOT_EXAMPLES = [
     {
         "user": (
             "[DOKUMEN]:\n"
-            "Potongan 1: Apabila Nasabah meninggal dunia atau dinyatakan tidak cakap hukum, "
-            "Bank berhak memblokir Rekening dan hanya akan menyerahkan dana kepada ahli waris "
-            "yang sah sesuai ketentuan hukum yang berlaku, dengan memenuhi persyaratan dokumen "
-            "yang ditentukan Bank.\n"
-            "Potongan 2: Nasabah wajib menjaga kerahasiaan PIN dan tidak meminjamkan kartu kepada pihak lain.\n\n"
-            "[PERTANYAAN]:\n"
-            "Apa yang dilakukan Bank jika nasabah meninggal dunia?"
-        ),
-        "assistant": (
-            "Bank berhak memblokir Rekening dan hanya akan menyerahkan dana kepada ahli waris "
-            "yang sah sesuai ketentuan hukum yang berlaku, dengan memenuhi persyaratan dokumen "
-            "yang ditentukan Bank."
-        ),
-    },
-    {
-        "user": (
-            "[DOKUMEN]:\n"
-            "Potongan 1: Bunga dihitung berdasarkan saldo harian dengan saldo minimal tertentu "
-            "untuk memperoleh bunga. Jumlah hari bunga dihitung dari hari sesungguhnya dalam "
-            "sebulan dibagi hari sesungguhnya dalam setahun. Bunga dikenakan Pajak Penghasilan "
-            "sesuai peraturan yang berlaku.\n"
-            "Potongan 2: Nasabah dapat memilih jangka waktu deposito mulai dari 1 bulan hingga 24 bulan.\n\n"
-            "[PERTANYAAN]:\n"
-            "Bagaimana cara perhitungan bunga tabungan?"
-        ),
-        "assistant": (
-            "Bunga dihitung berdasarkan saldo harian dengan saldo minimal tertentu untuk "
-            "memperoleh bunga. Jumlah hari bunga dihitung dari hari sesungguhnya dalam sebulan "
-            "dibagi hari sesungguhnya dalam setahun. Bunga dikenakan Pajak Penghasilan sesuai "
-            "peraturan yang berlaku."
-        ),
-    },
-    {
-        "user": (
-            "[DOKUMEN]:\n"
-            "Potongan 1: Pengaduan tertulis wajib diselesaikan dan disampaikan hasilnya kepada "
-            "nasabah paling lama 20 hari kerja sejak pengaduan diterima lengkap oleh Bank.\n"
-            "Potongan 2: Nasabah yang tidak puas dengan penyelesaian dapat mengajukan sengketa "
-            "ke lembaga alternatif penyelesaian sengketa.\n\n"
+            "Pengaduan tertulis diselesaikan dan disampaikan hasilnya kepada nasabah paling lama 20 hari kerja sejak dokumen pengaduan diterima secara lengkap oleh Bank.\n\n"
             "[PERTANYAAN]:\n"
             "Berapa lama batas waktu Bank menyelesaikan pengaduan tertulis?"
         ),
         "assistant": (
-            "Pengaduan tertulis wajib diselesaikan dan disampaikan hasilnya kepada nasabah "
-            "paling lama 20 hari kerja sejak pengaduan diterima lengkap oleh Bank."
+            "Bank menyelesaikan pengaduan tertulis paling lama 20 hari kerja sejak dokumen pengaduan diterima secara lengkap oleh Bank."
         ),
     },
 ]
