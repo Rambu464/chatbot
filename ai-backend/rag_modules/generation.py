@@ -42,7 +42,7 @@ def build_prompt(
 ) -> str:
     """Menyusun struktur prompt berformat ChatML lengkap dengan riwayat percakapan multi-turn."""
     if context:
-        user_block = f"[SUMBER INFORMASI]:\n{context}\n\n[PERTANYAAN USER]:\n{user_message}"
+        user_block = f"[DOKUMEN]:\n{context}\n\n[PERTANYAAN]:\n{user_message}"
     else:
         user_block = user_message
 
