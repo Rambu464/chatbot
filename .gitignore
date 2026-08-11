@@ -1,8 +1,19 @@
-# Python Backend
+# Git
+.git/
+
+# Python & Pycache
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py.class
 ai-backend/venv/
-ai-backend/__pycache__/
+venv/
+.venv/
 ai-backend/temp_uploads/
 ai-backend/.env
+ai-backend/.env.*
+!.env.example
 
 # Model GGUF (ukuran besar, diunduh manual - lihat README)
 ai-backend/models/
@@ -14,12 +25,24 @@ ai-backend/documents_registry.json
 
 # Database SQLite (users, chat sessions, messages - data lokal per instalasi)
 ai-backend/chatbot.db
+*.db
+*.sqlite
+*.sqlite3
+
+# RAGAS / Eval outputs
+ai-backend/ragas_results.csv
+ai-backend/ragas_summary_*.txt
+ragas_results.csv
+ragas_summary_*.txt
 
 # Next.js Frontend
 chatbot-frontend/node_modules/
 chatbot-frontend/.next/
 chatbot-frontend/.env.local
 
-# OS files
+# OS & Editor files
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+

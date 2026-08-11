@@ -38,8 +38,8 @@
   {
     "client_id": 6,
     "document": "syartum rek perbankan.pdf",
-    "question": "Kapan Bank berhak memblokir atau menutup rekening nasabah secara sepihak?",
-    "reference": "Bank berhak memblokir/menutup rekening jika ada dugaan penipuan atau kejahatan perbankan terkait rekening, nasabah memberikan data yang tidak benar/diragukan, atau ada permintaan resmi dari Kepolisian, Kejaksaan, Pengadilan, PPATK, KPK, atau kantor pajak sesuai peraturan yang berlaku."
+    "question": "Apa yang terjadi dengan rekening nasabah jika nasabah tersebut meninggal dunia?",
+    "reference": "Jika Nasabah meninggal dunia, pailit, dibubarkan, atau diletakkan di bawah pengawasan pihak yang ditunjuk oleh instansi berwenang, Bank berhak memblokir Rekening dan hanya akan mengalihkan hak atas Rekening kepada ahli waris atau pengganti haknya yang sah (atau pihak yang ditunjuk sesuai peraturan yang berlaku), dengan memenuhi persyaratan yang ditentukan Bank."
   },
   {
     "client_id": 6,

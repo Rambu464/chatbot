@@ -1,8 +1,0 @@
-=== RINGKASAN EVALUASI RAGAS -- 2026-08-09_20-19-16 ===
-Judge model run ini: llama-3.3-70b-versatile
-Total soal di golden dataset: 14 | Diproses run ini: 14
-
-faithfulness                                 : 0.500  (valid: 2/14)  <-- masih ada soal belum valid, jalankan lagi utk lanjut
-answer_relevancy                             : 0.899  (valid: 2/14)  <-- masih ada soal belum valid, jalankan lagi utk lanjut
-llm_context_precision_with_reference         : 0.833  (valid: 1/14)  <-- masih ada soal belum valid, jalankan lagi utk lanjut
-context_recall                               : 1.000  (valid: 1/14)  <-- masih ada soal belum valid, jalankan lagi utk lanjut

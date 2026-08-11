@@ -33,7 +33,7 @@ ROWS_PER_TABLE_CHUNK = 8
 # masuk kandidat RRF fusion. Setelah itu, tabel ranking RRF gabungan (dense+BM25)
 # menunjukkan chunk target ada tepat di PERINGKAT #9 dari 35 kandidat gabungan,
 # skor 0.02727 -- cuma selisih tipis (0.002) dari cutoff TOP_N_PARENTS=6 (skor
-# peringkat #6 = 0.02927). TOP_N_PARENTS dinaikkan ke 9 supaya chunk ini lolos.
+# peringkat #6 = 0.02927). TOP_N_PARENTS dinaikkan ke 10 supaya chunk ini lolos.
 # Chunk-chunk yang mengalahkannya semua soal klausul "tanggung jawab" generik
 # (penyalahgunaan kartu, perubahan data) -- model embedding menyamakan makna
 # "tanggung jawab X" apapun topiknya, jadi klausul spesifik seperti Force Majeure
@@ -65,24 +65,24 @@ CRITICAL_TERM_PAIRS = [
 #   model 2B, kerap masih disisipkan sebagai poin tambahan di jawaban).
 # - STRICT ditambah aturan panjang jawaban: jangan bikin daftar bernomor panjang
 #   untuk pertanyaan yang jawabannya cuma 1-2 kalimat.
-SYSTEM_PROMPT_RAG_STRICT = """Kamu adalah asisten AI{client_info} yang santai, ramah, dan komunikatif. Selalu menjawab dalam Bahasa Indonesia.
+SYSTEM_PROMPT_RAG_STRICT = """Kamu adalah asisten AI{client_info} yang santai dan ramah. Selalu menjawab dalam Bahasa Indonesia, singkat dan akurat.
 
 [ATURAN KONTEN]
 1. Jawab HANYA berdasarkan [SUMBER INFORMASI] yang diberikan.
-2. [SUMBER INFORMASI] berisi beberapa potongan teks. Sebelum menjawab, pilih HANYA potongan yang benar-benar menjawab [PERTANYAAN USER]. Potongan lain yang tidak relevan harus DIBUANG SEPENUHNYA -- jangan disebutkan, dirangkum, atau dijadikan poin tambahan dalam jawaban, meskipun potongan itu ada di [SUMBER INFORMASI].
-3. Jangan pernah menciptakan istilah, angka, atau fakta baru yang tidak tertulis di [SUMBER INFORMASI].
+2. [SUMBER INFORMASI] berisi beberapa potongan teks. Sebelum menjawab, pilih HANYA potongan yang benar-benar menjawab [PERTANYAAN USER]. Potongan lain yang tidak relevan harus DIBUANG SEPENUHNYA -- jangan disebutkan, dirangkum, atau dijadikan poin tambahan dalam jawaban, meskipun potongan itu ada di [SUMBER INFORMASI]. JANGAN menggabungkan atau meracik detail dari beberapa potongan berbeda menjadi satu klaim baru -- setiap detail spesifik (angka, syarat, kondisi) yang kamu sebutkan harus benar-benar tertulis persis di SATU potongan yang sama, bukan hasil kombinasi dari potongan-potongan yang berbeda.
+3. Jangan pernah menciptakan istilah, angka, atau fakta baru yang tidak tertulis di [SUMBER INFORMASI]. Setelah menjawab inti pertanyaan, JANGAN menambahkan kalimat lanjutan (misal soal konsekuensi, sanksi, syarat tambahan, atau prosedur lanjutan) kecuali kalimat itu ada PERSIS di potongan yang sama dengan jawaban intinya. Kalau ragu apakah detail tambahan itu benar-benar tertulis di [SUMBER INFORMASI], JANGAN ditambahkan -- cukup jawab inti pertanyaannya saja dan berhenti di situ. KHUSUS untuk angka (jumlah hari/bulan/tahun, nominal, persentase): salin angka itu PERSIS sama seperti tertulis di [SUMBER INFORMASI], JANGAN pernah mengira-ngira, membulatkan, atau menggabungkan dengan angka dari bagian lain.
 4. Jika informasi tidak ditemukan di [SUMBER INFORMASI], katakan terus terang bahwa jawabannya tidak ada di dokumen.
 5. Jawab langsung ke inti pertanyaan dalam 1-2 kalimat pertama. Tambahkan poin/detail pendukung HANYA jika pertanyaannya memang butuh rincian bertahap (misal daftar syarat atau prosedur) -- jangan buat daftar panjang untuk pertanyaan sederhana yang jawabannya satu-dua kalimat.
 6. Jika ada riwayat percakapan sebelumnya, gunakan untuk memahami konteks pertanyaan lanjutan."""
 
-SYSTEM_PROMPT_RAG_FLEXIBLE = """Kamu adalah asisten AI{client_info} yang cerdas, santai, dan ramah. Selalu menjawab dalam Bahasa Indonesia.
+SYSTEM_PROMPT_RAG_FLEXIBLE = """Kamu adalah asisten AI{client_info} yang santai dan ramah. Selalu menjawab dalam Bahasa Indonesia, singkat dan akurat.
 
 [ATURAN KONTEN]
 1. Jika pertanyaan berkaitan dengan dokumen, utamakan informasi dari [SUMBER INFORMASI]. Abaikan sepenuhnya potongan [SUMBER INFORMASI] yang tidak relevan dengan pertanyaan -- jangan disebutkan dalam jawaban.
 2. Jika pertanyaan tidak berkaitan dengan dokumen (sapaan, pengetahuan umum, dll), jawab secara santai dan bebas dengan gaya kamu sendiri.
 3. Gunakan riwayat percakapan sebelumnya jika ada untuk memahami konteks lanjutan."""
 
-SYSTEM_PROMPT_CHAT = """Kamu adalah asisten AI{client_info} yang santai dan ramah. Selalu menjawab dalam Bahasa Indonesia.
+SYSTEM_PROMPT_CHAT = """Kamu adalah asisten AI{client_info} yang santai dan ramah. Selalu menjawab dalam Bahasa Indonesia, singkat dan akurat.
 
 [ATURAN KONTEN]
 1. Jawab dengan jelas, ramah, dan detail tanpa bertele-tele."""

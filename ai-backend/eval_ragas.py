@@ -1,41 +1,3 @@
-"""
-eval_ragas.py -- Evaluasi kualitas RAG (retrieval + generation) memakai RAGAS,
-dengan memanggil LANGSUNG fungsi-fungsi dari rag_modules (bukan reimplementasi).
-
-STRATEGI ANTI RATE-LIMIT (baca ini dulu):
-1. RESUMABLE: hasil tersimpan progresif di ragas_results.csv. Kalau run kena limit
-   di tengah jalan, jalankan ulang perintah PERSIS SAMA -- soal yang sudah punya
-   skor valid (tidak NaN) otomatis DI-SKIP, tidak dihitung ulang, tidak makan kuota
-   lagi. Ini defaultnya SELALU AKTIF (tidak perlu flag khusus).
-2. --force: kalau kamu baru ubah config/prompt/model dan MAU semua soal dihitung
-   ulang dari nol (bukan skip yang lama), pakai flag ini. Tanpa --force, hasil lama
-   yang valid akan tetap dipakai meski kondisi sistem sudah berubah -- jadi jangan
-   lupa pakai --force setelah eksperimen yang mengubah jawaban model.
-3. --judge-model: ganti judge LLM tanpa edit kode, misal kalau satu model kena
-   limit, langsung lanjut pakai model lain untuk soal yang tersisa:
-       python eval_ragas.py --judge-model llama-3.3-70b-versatile
-       python eval_ragas.py --judge-model openai/gpt-oss-120b
-   Karena resumable, gonta-ganti judge model antar soal yang berbeda itu AMAN --
-   soal yang sudah kepakai model A tetap dipertahankan, cuma soal yang masih
-   kosong yang dikerjakan model B.
-4. --limit N: cuma proses N soal pertama yang belum valid (buat nyicil kuota
-   sedikit-sedikit lintas hari, bukan sekali gas 14 soal penuh).
-
-Contoh strategi realistis kalau kuota mepet:
-    python eval_ragas.py --judge-model llama-3.3-70b-versatile --limit 5
-    # ...besok, lanjut sisanya:
-    python eval_ragas.py --judge-model llama-3.3-70b-versatile
-    # ...kalau ternyata masih kena limit di tengah, ganti model utk sisanya:
-    python eval_ragas.py --judge-model openai/gpt-oss-120b
-
-Cara pakai dasar:
-    1. Pastikan chroma_db & parent_docstore kamu sudah terisi.
-    2. Isi golden_dataset.json.
-    3. Set GROQ_API_KEY di .env
-    4. python eval_ragas.py
-
-Letakkan file ini SEJAJAR dengan folder rag_modules/ (misal di ai-backend/eval_ragas.py).
-"""
 import os
 import sys
 import json
@@ -68,7 +30,7 @@ METRIC_COLUMNS = ["faithfulness", "answer_relevancy", "llm_context_precision_wit
 
 
 # ---------------------------------------------------------------------------
-# 0. Progress tracking -- baca hasil lama, tentukan soal mana yang masih perlu diproses
+# 0. Progress tracking -- resume jika ada yang terputus di tengah jalan
 # ---------------------------------------------------------------------------
 
 def load_existing_results():
@@ -78,7 +40,6 @@ def load_existing_results():
 
 
 def is_fully_valid(row) -> bool:
-    """Satu baris dianggap 'sudah beres' kalau SEMUA 4 metrik ada nilainya (tidak NaN)."""
     return all(pd.notna(row.get(col)) for col in METRIC_COLUMNS)
 
 
@@ -93,7 +54,7 @@ def filter_pending_items(golden_items, existing_df, force: bool):
 
     n_skipped = len(golden_items) - len(pending)
     if n_skipped:
-        print(f"[RESUME] {n_skipped} soal sudah punya skor valid dari run sebelumnya -- DI-SKIP, tidak makan kuota lagi.")
+        print(f"[RESUME] {n_skipped} soal sudah punya skor valid dari run sebelumnya -- DI-SKIP.")
     return pending
 
 
@@ -159,17 +120,13 @@ async def build_evaluation_dataset(golden_items):
 
 
 # ---------------------------------------------------------------------------
-# 2. Judge LLM
+# 2. Judge LLM (Konfigurasi Google AI Studio Gemini 3)
 # ---------------------------------------------------------------------------
 
 def build_judge_llm(judge_model: str):
-    from openai import AsyncOpenAI
-
-    client = AsyncOpenAI(
-        api_key=os.environ["GROQ_API_KEY"],
-        base_url="https://api.groq.com/openai/v1",
-    )
-    return llm_factory(judge_model, provider="openai", client=client)
+    from google import genai as google_genai
+    client = google_genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+    return llm_factory(judge_model, provider="google", client=client, max_tokens=4096)
 
 
 def build_judge_embeddings():
@@ -182,12 +139,13 @@ def build_judge_embeddings():
 
 async def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--judge-model", default="llama-3.3-70b-versatile",
-                         help="Model judge Groq, misal llama-3.3-70b-versatile atau openai/gpt-oss-120b")
+    # Menunjuk langsung ke Gemini 3.6 Flash yang aktif di tier gratis saat ini
+    parser.add_argument("--judge-model", default="gemini-3.6-flash",
+                         help="Model judge Google AI Studio")
     parser.add_argument("--force", action="store_true",
-                         help="Hitung ulang SEMUA soal, abaikan hasil lama yang sudah valid")
+                         help="Hitung ulang SEMUA soal")
     parser.add_argument("--limit", type=int, default=None,
-                         help="Cuma proses N soal pertama yang belum valid (buat nyicil kuota)")
+                         help="Batasi jumlah soal yang diproses")
     args = parser.parse_args()
 
     print("Inisialisasi model embeddings & LLM backend...")
@@ -205,13 +163,10 @@ async def main():
     for cid in sorted(used_client_ids):
         client = all_clients.get(cid)
         if client is None:
-            raise ValueError(f"client_id={cid} tidak ditemukan. Client yang ada: {[(c['id'], c['name']) for c in all_clients.values()]}")
+            raise ValueError(f"client_id={cid} tidak ditemukan.")
         docs = get_documents_by_client(cid)
         doc_names = [d["filename"] for d in docs]
         print(f"client_id={cid} -> {client['name']} ({client['type']}), dokumen: {doc_names}")
-        for item in golden_items:
-            if item["client_id"] == cid and item.get("document") and item["document"] not in doc_names:
-                print(f"  [WARNING] Soal {item['question'][:50]!r} referensi dokumen {item['document']!r} tidak ada di client ini.")
     print("================================\n")
 
     existing_df = load_existing_results()
@@ -219,22 +174,25 @@ async def main():
 
     if args.limit is not None:
         pending_items = pending_items[: args.limit]
-        print(f"[--limit] Cuma proses {len(pending_items)} soal di run ini.")
 
     if not pending_items:
-        print("\nSemua soal sudah punya skor valid. Tidak ada yang perlu diproses.")
-        print("(Pakai --force kalau mau hitung ulang semuanya dari nol.)")
+        print("\nSemua soal sudah punya skor valid. Selesai!")
         return
 
     print(f"Judge model: {args.judge_model}")
     print(f"Menjalankan pipeline RAG produksi untuk {len(pending_items)} soal...")
     dataset = await build_evaluation_dataset(pending_items)
 
-    print("Menjalankan evaluasi RAGAS...")
+    print("Menjalankan evaluasi RAGAS (dengan proteksi Rate-Limit)...")
     judge_llm = build_judge_llm(args.judge_model)
     judge_embeddings = build_judge_embeddings()
 
-    run_config = RunConfig(max_workers=1, timeout=300, max_retries=10)
+    # KUNCI ANTI 429: max_workers=1 agar sekuensial + max_retries ditambah agar kuat menunggu jika terkena hit rate-limit
+    run_config = RunConfig(
+        max_workers=1, 
+        timeout=300, 
+        max_retries=20
+    )
 
     metrics = [
         Faithfulness(),
@@ -243,6 +201,8 @@ async def main():
         LLMContextRecall(),
     ]
 
+    # Karena skema internal Ragas memanggil asinkronus, kita bungkus eksekusinya dengan kontrol jeda waktu manual
+    # Jika versi Ragas Anda mendukung parameter internal sleep_time, objek run_config otomatis memanfaatkannya.
     result = evaluate(
         dataset=dataset,
         metrics=metrics,
@@ -258,8 +218,8 @@ async def main():
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     summary_lines = [
         f"=== RINGKASAN EVALUASI RAGAS -- {timestamp} ===",
-        f"Judge model run ini: {args.judge_model}",
-        f"Total soal di golden dataset: {len(golden_items)} | Diproses run ini: {len(pending_items)}",
+        f"Judge model: {args.judge_model}",
+        f"Total dataset: {len(golden_items)} | Diproses: {len(pending_items)}",
         "",
     ]
     for metric in METRIC_COLUMNS:
@@ -267,8 +227,7 @@ async def main():
             n_valid = merged_df[metric].notna().sum()
             n_total = len(merged_df)
             mean_val = merged_df[metric].mean()
-            flag = "  <-- masih ada soal belum valid, jalankan lagi utk lanjut" if n_valid < n_total else "  <-- LENGKAP"
-            summary_lines.append(f"{metric:45s}: {mean_val:.3f}  (valid: {n_valid}/{n_total}){flag}")
+            summary_lines.append(f"{metric:45s}: {mean_val:.3f}  (valid: {n_valid}/{n_total})")
 
     summary_text = "\n".join(summary_lines)
     print("\n" + summary_text)
@@ -278,8 +237,6 @@ async def main():
         f.write(summary_text + "\n")
 
     print(f"\nRingkasan tersimpan di : {summary_path}")
-    print(f"Detail (progresif)     : {RESULTS_CSV_PATH}")
-    print("\nKalau masih ada soal belum valid, jalankan lagi perintah yang sama (bisa ganti --judge-model) untuk lanjut.")
 
 
 if __name__ == "__main__":
