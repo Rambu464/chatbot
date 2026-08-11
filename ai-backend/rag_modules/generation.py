@@ -116,7 +116,7 @@ async def initialize() -> RAGState:
         n_threads=N_THREADS,
         n_gpu_layers=int(os.getenv("N_GPU_LAYERS", "-1")),
         n_batch=512,
-        temperature=0.2,
+        temperature=0.0,
         repeat_penalty=1.3,
         frequency_penalty=0.3,
         presence_penalty=0.1,
