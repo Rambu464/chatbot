@@ -89,7 +89,7 @@ def run_pipeline_for_question(client_id, question, document):
     is_rag_mode = bool(parent_docs)
 
     system_prompt = generation.select_system_prompt(is_rag_mode=is_rag_mode, general_mode=False)
-    prompt = generation.build_prompt(system_prompt, question, context=context_text)
+    prompt = generation.build_prompt(system_prompt, question, context=context_text, use_few_shot=True)
 
     answer = state.llm.invoke(prompt)
     return contexts, answer.strip()
@@ -120,13 +120,19 @@ async def build_evaluation_dataset(golden_items):
 
 
 # ---------------------------------------------------------------------------
-# 2. Judge LLM (Konfigurasi Google AI Studio Gemini 3)
+# 2. Judge LLM (Konfigurasi OpenAI / Google AI Studio)
 # ---------------------------------------------------------------------------
 
 def build_judge_llm(judge_model: str):
-    from google import genai as google_genai
-    client = google_genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
-    return llm_factory(judge_model, provider="google", client=client, max_tokens=4096)
+    if judge_model.startswith("gpt-"):
+        from langchain_openai import ChatOpenAI
+        from ragas.llms import LangchainLLMWrapper
+        llm = ChatOpenAI(model=judge_model, api_key=os.environ["OPENAI_API_KEY"], temperature=0)
+        return LangchainLLMWrapper(llm)
+    else:
+        from google import genai as google_genai
+        client = google_genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+        return llm_factory(judge_model, provider="google", client=client, max_tokens=4096)
 
 
 def build_judge_embeddings():
@@ -139,9 +145,9 @@ def build_judge_embeddings():
 
 async def main():
     parser = argparse.ArgumentParser()
-    # Menunjuk langsung ke Gemini 3.6 Flash yang aktif di tier gratis saat ini
-    parser.add_argument("--judge-model", default="gemini-3.6-flash",
-                         help="Model judge Google AI Studio")
+    # Menunjuk ke gpt-4o-mini yang super cepat, akurat, dan hemat untuk RAGAS
+    parser.add_argument("--judge-model", default="gpt-4o-mini",
+                         help="Model judge (misal: gpt-4o-mini, gpt-4o, gemini-1.5-flash)")
     parser.add_argument("--force", action="store_true",
                          help="Hitung ulang SEMUA soal")
     parser.add_argument("--limit", type=int, default=None,

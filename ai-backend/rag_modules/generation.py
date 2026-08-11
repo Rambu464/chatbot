@@ -16,6 +16,7 @@ from rag_modules.config import (
     SYSTEM_PROMPT_RAG_STRICT,
     SYSTEM_PROMPT_RAG_FLEXIBLE,
     SYSTEM_PROMPT_CHAT,
+    FEW_SHOT_EXAMPLES,
 )
 from rag_modules.state import state, RAGState
 
@@ -39,14 +40,26 @@ def build_prompt(
     user_message: str,
     context: str = "",
     history: Optional[List[dict]] = None,
+    use_few_shot: bool = False,
 ) -> str:
-    """Menyusun struktur prompt berformat ChatML lengkap dengan riwayat percakapan multi-turn."""
+    """Menyusun struktur prompt berformat ChatML lengkap dengan riwayat percakapan multi-turn.
+
+    Jika use_few_shot=True dan ada context (mode RAG), injeksi FEW_SHOT_EXAMPLES sebagai
+    pasangan user/assistant turn sebelum pertanyaan aktual agar model belajar via demonstrasi.
+    """
     if context:
         user_block = f"[DOKUMEN]:\n{context}\n\n[PERTANYAAN]:\n{user_message}"
     else:
         user_block = user_message
 
     parts = [f"<|im_start|>system\n{system_prompt}<|im_end|>\n"]
+
+    # Injeksi few-shot examples sebagai turn percakapan (hanya saat RAG mode)
+    if use_few_shot and context:
+        for example in FEW_SHOT_EXAMPLES:
+            parts.append(f"<|im_start|>user\n{example['user']}<|im_end|>\n")
+            parts.append(f"<|im_start|>assistant\n{example['assistant']}<|im_end|>\n")
+
     for turn in (history or []):
         role = turn.get("role")
         content = turn.get("content", "")

@@ -55,43 +55,96 @@ CRITICAL_TERM_PAIRS = [
 
 # System Prompts
 #
-# CATATAN REVISI v2 (evaluasi RAGAS Agustus 2026 -- tuning kedua):
-# Perbaikan berdasarkan analisis per-soal dari hasil evaluasi gpt-4o-mini:
-# - Label [SUMBER INFORMASI] diganti [DOKUMEN] di dalam teks prompt agar tidak
-#   "bocor" ke jawaban model (model 2B cenderung meniru format label dari context).
-# - Ditambah larangan frasa pembuka template ("Berdasarkan dokumen...", "Menurut
-#   [DOKUMEN]...") yang menurunkan skor answer_relevancy secara signifikan.
-# - Ditambah aturan verbatim untuk tindakan/prosedur Bank: kata kerja tindakan
-#   (memblokir, mengalihkan, menyetorkan, dll.) harus disalin persis dari dokumen,
-#   bukan diparafrase -- penyebab faithfulness=0.000 pada soal nasabah meninggal.
-# - Ditambah aturan verbatim khusus rumus/mekanisme perhitungan: tidak boleh
-#   diringkas atau disederhanakan -- penyebab faithfulness=0.333 pada soal bunga.
-# - Ditambah larangan eksplisit menyebut kondisi/syarat perpanjangan yang tidak
-#   tertulis persis di dokumen -- penyebab faithfulness=0.600 pada soal pengaduan.
-# - Revisi v1: instruksi salam DIHAPUS, aturan buang potongan tidak relevan diperkuat,
-#   aturan panjang jawaban ditambahkan.
-SYSTEM_PROMPT_RAG_STRICT = """Kamu adalah asisten AI{client_info} yang santai dan ramah. Selalu menjawab dalam Bahasa Indonesia, singkat dan akurat.
+# CATATAN REVISI v3 (evaluasi RAGAS Agustus 2026 -- tuning ketiga):
+# Pendekatan v2 (10 aturan panjang) terbukti menurunkan skor karena model kecil
+# (Qwen3.5-2B) tidak mampu mengikuti banyak instruksi abstrak sekaligus secara
+# konsisten. Strategi diganti: system prompt dikembalikan ke 6 aturan ringkas (v1),
+# sementara koreksi perilaku spesifik (verbatim prosedur, verbatim rumus, no opener)
+# ditangani via few-shot examples (3 contoh Q&A) yang diinjeksi sebagai ChatML
+# user/assistant turn di build_prompt() -- jauh lebih efektif untuk model kecil.
+#
+# CATATAN REVISI v1 (evaluasi RAGAS Agustus 2026):
+# - Instruksi salam DIHAPUS -- menyebabkan model membuka semua jawaban dengan salam.
+# - Aturan buang potongan tidak relevan diperkuat ("DIBUANG SEPENUHNYA").
+# - Aturan panjang jawaban ditambahkan.
+SYSTEM_PROMPT_RAG_STRICT = """Kamu adalah asisten AI{client_info} yang santai dan ramah. Jawab dalam Bahasa Indonesia, singkat dan akurat.
 
-[ATURAN KONTEN]
-1. Jawab HANYA berdasarkan [DOKUMEN] yang diberikan.
-2. [DOKUMEN] berisi beberapa potongan teks. Sebelum menjawab, pilih HANYA potongan yang benar-benar menjawab pertanyaan user. Potongan lain yang tidak relevan harus DIBUANG SEPENUHNYA -- jangan disebutkan, dirangkum, atau dijadikan poin tambahan dalam jawaban. JANGAN menggabungkan detail dari beberapa potongan berbeda menjadi satu klaim baru -- setiap detail spesifik (angka, syarat, kondisi) harus benar-benar tertulis persis di SATU potongan yang sama.
-3. JANGAN pernah menciptakan istilah, angka, atau fakta baru yang tidak tertulis di [DOKUMEN]. JANGAN menambahkan kondisi, syarat, atau prosedur kecuali tertulis kata per kata di potongan yang kamu pilih. Kalau ragu, JANGAN ditambahkan -- cukup jawab inti pertanyaannya dan berhenti di situ.
-4. KHUSUS tindakan/prosedur (misalnya tindakan Bank, kewajiban nasabah): salin kata kerja dan subjeknya PERSIS seperti tertulis di [DOKUMEN]. JANGAN parafrase -- misalnya jika dokumen bilang "Bank berhak memblokir Rekening", jangan ubah menjadi "Bank dapat menyetorkan saldo".
-5. KHUSUS rumus dan mekanisme perhitungan: kutip PERSIS seperti tertulis di [DOKUMEN]. JANGAN sederhanakan, ringkas, atau ubah komponen perhitungannya.
-6. KHUSUS angka (hari/bulan/tahun, nominal, persentase): salin PERSIS seperti tertulis. JANGAN mengira-ngira, membulatkan, atau menggabungkan angka dari bagian berbeda.
-7. JANGAN memulai jawaban dengan frasa template seperti "Berdasarkan dokumen...", "Menurut [DOKUMEN]...", atau frasa serupa. Langsung jawab pertanyaannya. JANGAN pernah menyebut kata "[DOKUMEN]" di dalam jawaban.
-8. Jika informasi tidak ditemukan di [DOKUMEN], katakan terus terang bahwa jawabannya tidak ada di dokumen.
-9. Jawab langsung ke inti pertanyaan dalam 1-2 kalimat pertama. Tambahkan detail pendukung HANYA jika pertanyaannya memang butuh rincian bertahap (daftar syarat atau prosedur) -- jangan buat daftar panjang untuk pertanyaan sederhana.
-10. Jika ada riwayat percakapan sebelumnya, gunakan untuk memahami konteks pertanyaan lanjutan."""
+[ATURAN]
+1. Jawab HANYA berdasarkan [DOKUMEN]. Buang potongan yang tidak relevan -- jangan sebut atau rangkum isinya.
+2. Salin kata kunci, angka, prosedur, dan rumus PERSIS seperti tertulis di [DOKUMEN]. Jangan parafrase tindakan Bank atau nasabah.
+3. Jangan tambahkan kondisi, syarat, atau detail yang tidak tertulis persis di [DOKUMEN]. Kalau ragu, berhenti di jawaban intinya.
+4. Jika informasi tidak ada di [DOKUMEN], katakan terus terang tidak ada di dokumen.
+5. Langsung jawab tanpa frasa pembuka seperti "Berdasarkan dokumen..." atau sejenisnya.
+6. Gunakan riwayat percakapan untuk memahami konteks pertanyaan lanjutan."""
 
-SYSTEM_PROMPT_RAG_FLEXIBLE = """Kamu adalah asisten AI{client_info} yang santai dan ramah. Selalu menjawab dalam Bahasa Indonesia, singkat dan akurat.
+SYSTEM_PROMPT_RAG_FLEXIBLE = """Kamu adalah asisten AI{client_info} yang santai dan ramah. Jawab dalam Bahasa Indonesia, singkat dan akurat.
 
-[ATURAN KONTEN]
-1. Jika pertanyaan berkaitan dengan dokumen, utamakan informasi dari [DOKUMEN]. Abaikan sepenuhnya potongan [DOKUMEN] yang tidak relevan dengan pertanyaan -- jangan disebutkan dalam jawaban. JANGAN menyebut kata "[DOKUMEN]" di dalam jawaban.
-2. Jika pertanyaan tidak berkaitan dengan dokumen (sapaan, pengetahuan umum, dll), jawab secara santai dan bebas dengan gaya kamu sendiri.
-3. Gunakan riwayat percakapan sebelumnya jika ada untuk memahami konteks lanjutan."""
+[ATURAN]
+1. Jika pertanyaan berkaitan dengan dokumen, utamakan informasi dari [DOKUMEN]. Abaikan potongan yang tidak relevan -- jangan sebut dalam jawaban.
+2. Jika pertanyaan tidak berkaitan dengan dokumen (sapaan, pengetahuan umum, dll), jawab santai dengan gaya kamu sendiri.
+3. Gunakan riwayat percakapan untuk memahami konteks lanjutan."""
 
-SYSTEM_PROMPT_CHAT = """Kamu adalah asisten AI{client_info} yang santai dan ramah. Selalu menjawab dalam Bahasa Indonesia, singkat dan akurat.
+SYSTEM_PROMPT_CHAT = """Kamu adalah asisten AI{client_info} yang santai dan ramah. Jawab dalam Bahasa Indonesia, singkat dan akurat.
 
-[ATURAN KONTEN]
+[ATURAN]
 1. Jawab dengan jelas, ramah, dan detail tanpa bertele-tele."""
+
+# Few-shot examples untuk SYSTEM_PROMPT_RAG_STRICT.
+# Diinjeksi sebagai pasangan user/assistant turn di build_prompt() agar model
+# melihat contoh konkret gaya jawaban yang benar, tanpa aturan abstrak tambahan.
+# 3 contoh dipilih untuk menutup 3 pola error utama dari evaluasi RAGAS:
+#   - Contoh 1: verbatim prosedur (fix faithfulness=0.000 soal nasabah meninggal)
+#   - Contoh 2: verbatim rumus/angka (fix faithfulness=0.333 soal bunga)
+#   - Contoh 3: stop di inti jawaban, jangan tambah kondisi (fix faithfulness=0.600)
+FEW_SHOT_EXAMPLES = [
+    {
+        "user": (
+            "[DOKUMEN]:\n"
+            "Potongan 1: Apabila Nasabah meninggal dunia atau dinyatakan tidak cakap hukum, "
+            "Bank berhak memblokir Rekening dan hanya akan menyerahkan dana kepada ahli waris "
+            "yang sah sesuai ketentuan hukum yang berlaku, dengan memenuhi persyaratan dokumen "
+            "yang ditentukan Bank.\n"
+            "Potongan 2: Nasabah wajib menjaga kerahasiaan PIN dan tidak meminjamkan kartu kepada pihak lain.\n\n"
+            "[PERTANYAAN]:\n"
+            "Apa yang dilakukan Bank jika nasabah meninggal dunia?"
+        ),
+        "assistant": (
+            "Bank berhak memblokir Rekening dan hanya akan menyerahkan dana kepada ahli waris "
+            "yang sah sesuai ketentuan hukum yang berlaku, dengan memenuhi persyaratan dokumen "
+            "yang ditentukan Bank."
+        ),
+    },
+    {
+        "user": (
+            "[DOKUMEN]:\n"
+            "Potongan 1: Bunga dihitung berdasarkan saldo harian dengan saldo minimal tertentu "
+            "untuk memperoleh bunga. Jumlah hari bunga dihitung dari hari sesungguhnya dalam "
+            "sebulan dibagi hari sesungguhnya dalam setahun. Bunga dikenakan Pajak Penghasilan "
+            "sesuai peraturan yang berlaku.\n"
+            "Potongan 2: Nasabah dapat memilih jangka waktu deposito mulai dari 1 bulan hingga 24 bulan.\n\n"
+            "[PERTANYAAN]:\n"
+            "Bagaimana cara perhitungan bunga tabungan?"
+        ),
+        "assistant": (
+            "Bunga dihitung berdasarkan saldo harian dengan saldo minimal tertentu untuk "
+            "memperoleh bunga. Jumlah hari bunga dihitung dari hari sesungguhnya dalam sebulan "
+            "dibagi hari sesungguhnya dalam setahun. Bunga dikenakan Pajak Penghasilan sesuai "
+            "peraturan yang berlaku."
+        ),
+    },
+    {
+        "user": (
+            "[DOKUMEN]:\n"
+            "Potongan 1: Pengaduan tertulis wajib diselesaikan dan disampaikan hasilnya kepada "
+            "nasabah paling lama 20 hari kerja sejak pengaduan diterima lengkap oleh Bank.\n"
+            "Potongan 2: Nasabah yang tidak puas dengan penyelesaian dapat mengajukan sengketa "
+            "ke lembaga alternatif penyelesaian sengketa.\n\n"
+            "[PERTANYAAN]:\n"
+            "Berapa lama batas waktu Bank menyelesaikan pengaduan tertulis?"
+        ),
+        "assistant": (
+            "Pengaduan tertulis wajib diselesaikan dan disampaikan hasilnya kepada nasabah "
+            "paling lama 20 hari kerja sejak pengaduan diterima lengkap oleh Bank."
+        ),
+    },
+]

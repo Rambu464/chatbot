@@ -299,7 +299,7 @@ async def chat_endpoint(request: ChatRequest, user=Depends(get_current_user)):
     print(f"[TIMING] Retrieval: {time.time() - retrieval_start:.3f} detik")
 
     system_prompt = rag.select_system_prompt(is_rag_mode, request.general_mode, client_name=client_name)
-    prompt = rag.build_prompt(system_prompt, user_input, context, history=history)
+    prompt = rag.build_prompt(system_prompt, user_input, context, history=history, use_few_shot=True)
 
     stop_event = threading.Event()
 
@@ -405,7 +405,7 @@ async def widget_chat_endpoint(
     # Jalankan Retrieval
     context, is_rag_mode = rag.get_context(client_id, user_input_lower, query_embedding, request.document)
     system_prompt = rag.select_system_prompt(is_rag_mode, request.general_mode, client_name=client_name)
-    prompt = rag.build_prompt(system_prompt, user_input, context, history=history)
+    prompt = rag.build_prompt(system_prompt, user_input, context, history=history, use_few_shot=True)
 
     # Generate response
     stop_event = threading.Event()
