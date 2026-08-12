@@ -22,6 +22,19 @@ from ragas.metrics import (
 from ragas.llms import llm_factory
 from ragas.embeddings import LangchainEmbeddingsWrapper
 from ragas.run_config import RunConfig
+from langchain_openai import OpenAIEmbeddings
+
+# Instruksi tambahan untuk prompt internal ResponseRelevancy (answer_relevancy).
+# RAGAS default TIDAK punya instruksi bahasa -> judge LLM selalu generate
+# pertanyaan sintetis dalam Bahasa Inggris meski response-nya Bahasa Indonesia,
+# yang bikin cosine similarity ke pertanyaan asli jadi rendah tanpa alasan
+# yang benar (dikonfirmasi lewat debug_relevancy.py).
+RESPONSE_RELEVANCY_LANGUAGE_FIX = (
+    "\n\nIMPORTANT: The generated question MUST be written in the exact "
+    "same language as the given answer. If the answer is written in "
+    "Indonesian, the question must also be written in Indonesian. "
+    "Do not translate to English."
+)
 
 
 GOLDEN_DATASET_PATH = os.path.join(os.path.dirname(__file__), "golden_dataset.json")
@@ -136,7 +149,13 @@ def build_judge_llm(judge_model: str):
 
 
 def build_judge_embeddings():
-    return LangchainEmbeddingsWrapper(state.embeddings)
+    # SENGAJA tidak pakai state.embeddings (MiniLM produksi) di sini.
+    # MiniLM cocok untuk retrieval, tapi kurang tajam untuk mengukur semantic
+    # textual similarity yang dibutuhkan ResponseRelevancy (cosine similarity
+    # antar pertanyaan pendek) -- skornya jadi termampatkan/underestimate.
+    # Embedding produksi untuk RETRIEVAL tetap tidak berubah; ini cuma dipakai
+    # RAGAS saat menilai jawaban.
+    return LangchainEmbeddingsWrapper(OpenAIEmbeddings(model="text-embedding-3-small"))
 
 
 # ---------------------------------------------------------------------------
@@ -200,9 +219,12 @@ async def main():
         max_retries=20
     )
 
+    response_relevancy_metric = ResponseRelevancy()
+    response_relevancy_metric.question_generation.instruction += RESPONSE_RELEVANCY_LANGUAGE_FIX
+
     metrics = [
         Faithfulness(),
-        ResponseRelevancy(),
+        response_relevancy_metric,
         LLMContextPrecisionWithReference(),
         LLMContextRecall(),
     ]
