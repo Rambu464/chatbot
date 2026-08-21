@@ -9,19 +9,36 @@ peran pengguna, dan riwayat chat permanen**.
 
 ```markdown
 # Struktur Direktori
-project_rag/
+chatbot-fork/
+├── README.md
+├── working.md
 ├── ai-backend/
 │   ├── main.py          # FastAPI: RAG, auth, chat session, admin
-│   ├── database.py       # SQLite: users, chat_sessions, messages
+│   ├── access.py        # Utilitas autentikasi dan otorisasi
+│   ├── database.py      # SQLite: users, chat_sessions, messages
+│   ├── rag.py           # Kompatibilitas/facade untuk pipeline RAG
+│   ├── rag_modules/     # Modul cache, konfigurasi, ingestion, retrieval, dan generation
+│   ├── debug_retrieval_scores.py
+│   ├── eval_ragas.py
+│   ├── stress_test_faithfulness.py
+│   ├── golden_dataset.json
+│   ├── manual_test_questions.json
+│   ├── manual_cache_eval.py
+│   ├── populate_via_api.py
+│   ├── verify_cache_persistence.py
 │   ├── requirements.txt
-│   └── models/           # Tempat file model .gguf (dibuat manual, lihat langkah 1)
+│   └── models/           # File model .gguf lokal, diabaikan Git
 └── chatbot-frontend/
-    └── app/
-        ├── page.tsx       # Halaman chat utama
-        ├── login/page.tsx # Halaman login
-        ├── admin/page.tsx # Admin Dashboard (kelola user & upload dokumen)
-        └── components/
-            └── sidebar.tsx # Riwayat chat + navigasi
+  ├── app/               # Halaman Next.js: chat, login, dan admin
+  ├── components/        # Komponen layout, tema, sidebar, dan komponen UI
+  ├── hooks/             # Custom React hooks
+  ├── lib/               # Utilitas frontend
+  ├── public/            # Widget chatbot dan aset publik
+  ├── styles/            # Style tambahan
+  ├── package.json
+  ├── pnpm-lock.yaml
+  ├── next.config.mjs
+  └── tsconfig.json
 ```
 
 ## Arsitektur Singkat
