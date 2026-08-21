@@ -270,14 +270,7 @@ async def chat_endpoint(request: ChatRequest, user=Depends(get_current_user)):
     user_input_lower = user_input.lower()
     query_embedding = rag.state.embeddings.embed_query(user_input_lower)
 
-    # 1. CEK SEMANTIC CACHE -- HANYA untuk pesan PERTAMA di sesi (history kosong).
-    #    Kenapa: entry cache dibuat murni dari embedding teks query, TANPA
-    #    memperhitungkan riwayat percakapan. Untuk pesan lanjutan yang maknanya
-    #    bergantung konteks (mis. "boleh kasih tau stepnya"), cache lookup
-    #    berisiko salah nyambungin ke jawaban dari sesi/topik lain yang
-    #    kebetulan mirip secara embedding. Begitu ada histori, cache dilewati
-    #    demi keamanan/akurasi jawaban (trade-off: sedikit mengurangi cache
-    #    hit rate untuk percakapan panjang, tapi lebih aman).
+    # 1. CEK SEMANTIC CACHE
     best_match, best_score = (None, 0.0)
     if not history:
         best_match, best_score = await rag.check_cache(cache_key, user_input_lower, query_embedding)

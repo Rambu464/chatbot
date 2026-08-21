@@ -129,8 +129,10 @@ async def initialize() -> RAGState:
 
     state.retrievers = {}
     state.bm25_indexes = {}
-    state.prompt_cache = {}
     state.cache_lock = asyncio.Lock()
     state.inference_lock = threading.Lock()
-
+ 
+    from rag_modules import cache
+    cache.load_persisted_cache()   # <- hydrate state.prompt_cache dari SQLite, bukan mulai kosong
+ 
     return state

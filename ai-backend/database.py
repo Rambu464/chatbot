@@ -114,6 +114,23 @@ def init_db():
         FOREIGN KEY (client_id) REFERENCES clients (id) ON DELETE CASCADE
     )
     """)
+
+    # Create prompt_cache_entries table (persist semantic cache lintas restart)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS prompt_cache_entries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        cache_key TEXT NOT NULL,
+        query TEXT NOT NULL,
+        embedding TEXT NOT NULL,  -- JSON list of float
+        response TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    """)
+    cursor.execute("""
+    CREATE INDEX IF NOT EXISTS idx_prompt_cache_key ON prompt_cache_entries (cache_key)
+    """)
+    conn.commit()
+
     
     # Seed default clients & users if tables are empty
     cursor.execute("SELECT COUNT(*) as count FROM clients")
@@ -454,3 +471,66 @@ def delete_chat_session(session_id: str, user_id: int):
     conn.commit()
     conn.close()
     return True
+
+# --- PROMPT CACHE PERSISTENCE ---
+ 
+def replace_cache_entries(cache_key: str, entries: list):
+    """Timpa semua baris untuk 1 cache_key dengan snapshot bucket in-memory
+    saat ini. Dipanggil tiap kali store_cache() -- jadi urutan (FIFO
+    eviction) & isi selalu sinkron 1:1 dengan state.prompt_cache[cache_key].
+    """
+    import json
+    from datetime import datetime
+ 
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM prompt_cache_entries WHERE cache_key = ?", (cache_key,))
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.executemany(
+        "INSERT INTO prompt_cache_entries (cache_key, query, embedding, response, created_at) VALUES (?, ?, ?, ?, ?)",
+        [(cache_key, e["query"], json.dumps(e["embedding"]), e["response"], now_str) for e in entries],
+    )
+    conn.commit()
+    conn.close()
+ 
+ 
+def load_all_cache_entries() -> dict:
+    """Baca semua entri cache tersimpan, dikelompokkan per cache_key.
+    Dipanggil sekali saat startup (generation.initialize()) untuk hydrate
+    state.prompt_cache -- inilah yang bikin cache SURVIVE restart proses.
+    """
+    import json
+ 
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT cache_key, query, embedding, response FROM prompt_cache_entries ORDER BY id ASC")
+    rows = cursor.fetchall()
+    conn.close()
+ 
+    result: dict = {}
+    for row in rows:
+        result.setdefault(row["cache_key"], []).append({
+            "query": row["query"],
+            "embedding": json.loads(row["embedding"]),
+            "response": row["response"],
+        })
+    return result
+ 
+ 
+def delete_cache_entries_by_prefix(prefix: str):
+    """Hapus semua entri cache yang cache_key-nya diawali `prefix`.
+    Dipakai invalidate_document_cache() saat dokumen client diganti/dihapus.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM prompt_cache_entries WHERE cache_key LIKE ?", (f"{prefix}%",))
+    conn.commit()
+    conn.close()
+
+ 
+if __name__ == "__main__":
+    print(__doc__)
+    print("\n--- SNIPPET_INIT_DB ---")
+    print(SNIPPET_INIT_DB)
+    print("\n--- SNIPPET_NEW_FUNCTIONS ---")
+    print(SNIPPET_NEW_FUNCTIONS)

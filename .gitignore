@@ -10,10 +10,19 @@
 ai-backend/venv/
 venv/
 .venv/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+htmlcov/
+coverage.xml
 ai-backend/temp_uploads/
 ai-backend/.env
 ai-backend/.env.*
 !.env.example
+
+# Local logs
+*.log
 
 # Model GGUF (ukuran besar, diunduh manual - lihat README)
 ai-backend/models/
